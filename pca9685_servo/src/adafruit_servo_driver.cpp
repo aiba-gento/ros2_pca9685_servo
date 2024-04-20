@@ -8,53 +8,51 @@
  * @copyright Copyright (c) 2024
  *
  */
-#include "control/adafruit_servo_driver.hpp"
+#include "adafruit_servo_driver.hpp"
 
-Ada_ServoDriver::Ada_ServoDriver(int i2c, double servo_freq)
+AdaServoDriver::AdaServoDriver()
 {
-    _i2c = i2c;
-    SERVO_CONTROL_FREQUENCY = servo_freq;
 }
 
-void Ada_ServoDriver::write8(uint8_t addr, uint8_t d)
+void AdaServoDriver::write8(uint8_t addr, uint8_t d)
 {
-    uint8_t sendData[2];
+    uint8_t send_data[2];
 
-    sendData[0] = addr;
-    sendData[1] = d;
-    if (write(_i2c, sendData, 2) != 2)
+    send_data[0] = addr;
+    send_data[1] = d;
+    if (write(_i2c, send_data, 2) != 2)
     {
         printf("Faild to send i2c\n");
     }
 }
 
-uint8_t Ada_ServoDriver::read8(uint8_t addr)
+uint8_t AdaServoDriver::read8(uint8_t addr)
 {
-    uint8_t sendData;
-    uint8_t readData;
+    uint8_t send_data;
+    uint8_t read_data;
 
-    sendData = addr;
-    if (write(_i2c, &sendData, 1) != 1)
+    send_data = addr;
+    if (write(_i2c, &send_data, 1) != 1)
     {
         printf("Failed to send i2c @read\n");
     }
     else
     {
-        if (read(_i2c, &readData, 1) != 1)
+        if (read(_i2c, &read_data, 1) != 1)
         {
             printf("Failed to read i2c\n");
         }
     }
 
-    return readData;
+    return read_data;
 }
 
-void Ada_ServoDriver::reset(void)
+void AdaServoDriver::reset()
 {
     write8(PCA9685_MODE1, 0x0);
 }
 
-void Ada_ServoDriver::setPWMFreq(float freq)
+void AdaServoDriver::setPWMFreq(float freq)
 {
     float prescaleval = 25000000;
 
@@ -75,17 +73,17 @@ void Ada_ServoDriver::setPWMFreq(float freq)
     write8(PCA9685_MODE1, oldmode | 0xa1);
 }
 
-std::string Ada_ServoDriver::setPWM(uint8_t srvNo, uint16_t onTime, uint16_t offTime)
+std::string AdaServoDriver::setPWM(uint8_t ch, uint16_t onTime, uint16_t offTime)
 {
-    uint8_t sendData[5];
+    uint8_t send_data[5];
 
-    sendData[0] = LED0_ON_L + 4 * srvNo;
-    sendData[1] = (uint8_t)(0x00ff & onTime);
-    sendData[2] = (uint8_t)((0xff00 & onTime) >> 8);
-    sendData[3] = (uint8_t)(0x00ff & offTime);
-    sendData[4] = (uint8_t)((0xff00 & offTime) >> 8);
+    send_data[0] = LED0_ON_L + 4 * ch;
+    send_data[1] = (uint8_t)(0x00ff & onTime);
+    send_data[2] = (uint8_t)((0xff00 & onTime) >> 8);
+    send_data[3] = (uint8_t)(0x00ff & offTime);
+    send_data[4] = (uint8_t)((0xff00 & offTime) >> 8);
 
-    if (write(_i2c, sendData, 5) != 5)
+    if (write(_i2c, send_data, 5) != 5)
     {
         printf("Faild to send i2c @setPWM\n");
         return "Faild to send i2c @setPWM";
@@ -93,22 +91,41 @@ std::string Ada_ServoDriver::setPWM(uint8_t srvNo, uint16_t onTime, uint16_t off
     return "success to send i2c @setPWM";
 }
 
-int Ada_ServoDriver::setServoPulse(uint8_t ch, double pulseWidth_us)
+int AdaServoDriver::setServoPulse(uint8_t ch, double pulseWidth_us)
 {
-    double pulselength;
-    double pulseWidth;
+    double pulse_length;
+    double pulse_width;
 
     // 1秒=1000000usを60Hzで割ってパルス長を算出。
-    pulselength = 1000000 / SERVO_CONTROL_FREQUENCY;
+    pulse_length = 1000000 / freqency_;
     // 12bit(2^12=4096)分解能相当へ。1分解能当たりの時間算出。
-    pulselength /= 4096;
+    pulse_length /= 4096;
     // PWMのパルス設定値を算出。
-    pulseWidth = pulseWidth_us / pulselength;
+    pulse_width = pulseWidth_us / pulse_length;
 
     // PWM値設定。
     //  setPWM(channel, on_timing, off_timing)
     //  channelで指定したチャネルのPWM出力のon(0→1）になるタイミングと
     //  off(1→0)になるタイミングを0～4095で設定する。
-    setPWM(ch, 0, pulseWidth);
-    return pulseWidth;
+    setPWM(ch, 0, pulse_width);
+    return pulse_width;
+}
+
+bool AdaServoDriver::openI2C(char *i2c_file_name = "/dev/i2c-1", int address = 0x40)
+{
+    i2c_file_name_ = i2c_file_name;
+    address_ = address;
+
+    _i2c = open(i2c_file_name_, O_RDWR);
+    if (_i2c < 0)
+    {
+        printf("Failed to open i2c\n");
+        return false;
+    }
+    if (ioctl(_i2c, I2C_SLAVE, address_) < 0)
+    {
+        printf("Failed to acquire bus access and/or talk to slave\n");
+        return false;
+    }
+    return true;
 }

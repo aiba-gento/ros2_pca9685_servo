@@ -43,22 +43,24 @@
 #define ALLLED_OFF_L 0xFC
 #define ALLLED_OFF_H 0xFD
 
-class Ada_ServoDriver
+class AdaServoDriver
 {
 private:
-    double SERVO_CONTROL_FREQUENCY = 60;
-    double SERVO_CENTER_PULSE_WIDTH_US = 1600;
+    double freqency_ = 60;
+    char *i2c_file_name_ = "/dev/i2c-1"; // I2Cデバイスのパス（古いものはi2c-0）
+    int address_ = 0x41;                 // ドライバのI2Cアドレス
 
 public:
-    Ada_ServoDriver(int i2c, double servo_fraq);
-    void reset(void);
-    void setPWMFreq(float frea);
-    std::string setPWM(uint8_t srvNo, uint16_t onTime, uint16_t offTime);
+    AdaServoDriver();
+    void reset();
+    void setPWMFreq(float freq);
     int setServoPulse(uint8_t ch, double pulseWidth_us);
-    uint8_t read8(uint8_t addr);
-    void write8(uint8_t addr, uint8_t d);
+    bool openI2C(char *i2c_file_name, int address);
 
 private:
+    uint8_t read8(uint8_t addr);
+    void write8(uint8_t addr, uint8_t d);
+    std::string setPWM(uint8_t srvNo, uint16_t onTime, uint16_t offTime);
     uint8_t _i2cAddr;
     int _i2c;
 };
