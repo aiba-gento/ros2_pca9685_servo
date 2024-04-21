@@ -11,8 +11,8 @@ x: サーボモーターのチャンネル
 |i2c_file_name|string|I2Cデバイスのパス("/dev/i2c-1")|
 |driver_address|int|PCA9685のアドレス|
 
-# subscriber
+## subscriber
 x: サーボモーターのチャンネル
 |topic名|型|内容|
 |:-:|:-:|:-:|
-|/servo/_x/angle|std_msgs::msg::Float64|サーボモーターの角度|
+|/servo/_x/angle|std_msgs::msg::Float64|サーボモーターの角度[rad]|
