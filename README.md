@@ -1,4 +1,4 @@
-# PCA9685 Servo Driver Node
+# PCA9685 Servo Driver
 PCA9685というチップとI2C通信してサーボモーターを動かすノードです。
 ## parameter
 x: サーボモーターのチャンネル
